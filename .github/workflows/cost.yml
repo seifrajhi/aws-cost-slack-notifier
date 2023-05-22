@@ -1,0 +1,37 @@
+# This is a basic workflow to help you get started with Actions
+name: Sends Daily AWS Costs to Slack
+permissions:
+  id-token: write # required to use OIDC authentication
+  contents: write # required
+  actions: read
+  security-events: write
+  statuses: write
+
+on:
+  push:
+    branches: [ main ]
+env:
+  PROFILE_AWS: "sre-eks-dev-1"
+  SLACK_TOKEN: "xoxb-xxxxxxx-xxxxxxx-xxxxxxxx"
+  SLACK_CHANNEL: "demo"
+jobs:
+  build:
+    name: Get  and send the costs
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: arn:aws:iam::xxxxxxxxxx:role/github-oidc
+        role-duration-seconds: 900
+        aws-region: eu-west-1
+    - name: Test AWS Creds
+      run: aws sts get-caller-identity
+    - name: Get Costs
+      run: |
+          npm install -g aws-cost-cli
+          aws-cost -k $AWS_ACCESS_KEY_ID -s $AWS_SECRET_ACCESS_KEY -t $AWS_SESSION_TOKEN -S $SLACK_TOKEN -C $SLACK_CHANNEL
